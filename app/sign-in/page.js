@@ -1,0 +1,153 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Mail, Lock, LogIn, Loader2, AlertCircle, Compass } from "lucide-react";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+
+export default function SignInPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Redirect to dashboard on successful login
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setError(data.message || "Invalid credentials. Please try again.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-white">
+      <div className="w-full max-w-md space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-borderLine shadow-sm">
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-coral-100 text-coral-500 mb-1">
+            <Compass size={24} />
+          </div>
+          <h2 className="font-display font-extrabold text-3xl text-primaryText tracking-tight">
+            Welcome Back to Travellow
+          </h2>
+          <p className="text-sm text-bodyText">
+            Sign in to access your travel dashboard and curated itineraries.
+          </p>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-600 text-sm">
+            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <Input
+            label="Email Address"
+            type="email"
+            icon={Mail}
+            placeholder="anney@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            icon={Lock}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full justify-center mt-2"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Signing In...
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                Sign In
+              </>
+            )}
+          </Button>
+        </form>
+
+        {/* Demo Credentials Helper Box */}
+        <div className="p-4 rounded-2xl bg-secondaryBg border border-borderLine text-xs space-y-1.5 text-bodyText">
+          <span className="font-semibold text-primaryText block">
+            Academic Demo Credentials:
+          </span>
+          <p>
+            User: <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">anney@example.com</code> / <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">password123</code>
+          </p>
+          <p>
+            Admin: <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">admin@travellow.ai</code> / <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">password123</code>
+          </p>
+        </div>
+
+        {/* Footer Link */}
+        <div className="text-center pt-2 border-t border-borderLine">
+          <p className="text-sm text-bodyText">
+            Don't have an account?{" "}
+            <Link
+              href="/sign-up"
+              className="font-semibold text-coral-500 hover:text-coral-600 transition-colors"
+            >
+              Create Account
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
