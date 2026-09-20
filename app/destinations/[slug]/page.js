@@ -26,6 +26,7 @@ import DestinationMap from "@/components/maps/DestinationMap";
 import WeatherCard from "@/components/weather/WeatherCard";
 import HotelCard from "@/components/hotels/HotelCard";
 import GuideCard from "@/components/guides/GuideCard";
+import ReviewSection from "@/components/reviews/ReviewSection";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 
@@ -482,6 +483,17 @@ export default function DestinationDetailPage({ params: initialParams }) {
               </p>
             </div>
           )}
+        </div>
+
+        {/* REVIEWS & RATINGS SECTION */}
+        <div className="pt-8 border-t border-borderLine">
+          <ReviewSection
+            targetType="destination"
+            targetId={destination._id || destination.id}
+            targetName={name}
+            initialRating={rating}
+            initialReviewCount={reviewCount}
+          />
         </div>
 
       </div>
