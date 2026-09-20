@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Compass, Menu, X, Sparkles, User, LogIn, LogOut, LayoutDashboard } from "lucide-react";
+import { Compass, Menu, X, Sparkles, User, LogIn, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import Button from "@/components/ui/Button";
 
 const navLinks = [
@@ -114,6 +114,14 @@ export default function Navbar() {
               <div className="w-24 h-9 rounded-full bg-secondaryBg animate-pulse" />
             ) : authUser ? (
               <>
+                {authUser.role === "ADMIN" && (
+                  <Link href="/admin">
+                    <Button variant="softCoral" size="sm">
+                      <ShieldCheck size={16} />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/dashboard">
                   <Button variant="secondary" size="sm">
                     <LayoutDashboard size={16} />

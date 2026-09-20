@@ -10,35 +10,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Helper to recalculate average rating and review count from Review collection
- */
-async function updateTargetRating(targetField, targetId) {
-  const reviews = await Review.find({ [targetField]: targetId }).lean();
-  const reviewCount = reviews.length;
-
-  let averageRating = 4.8;
-  if (reviewCount > 0) {
-    const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-    averageRating = Math.round((sum / reviewCount) * 100) / 100;
-  } else {
-    if (targetField === "destination") averageRating = 4.8;
-    else if (targetField === "hotel") averageRating = 4.5;
-    else if (targetField === "guide") averageRating = 4.9;
-  }
-
-  let Model;
-  if (targetField === "destination") Model = Destination;
-  else if (targetField === "hotel") Model = Hotel;
-  else if (targetField === "guide") Model = Guide;
-
-  if (Model) {
-    await Model.findByIdAndUpdate(targetId, {
-      rating: averageRating,
-      reviewCount: reviewCount,
-    });
-  }
-}
+import { updateTargetRating } from "@/lib/reviews/recalculateRating";
 
 /**
  * GET /api/reviews
