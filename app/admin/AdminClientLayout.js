@@ -26,7 +26,7 @@ const sidebarNavItems = [
   { name: "Destinations", href: "/admin/destinations", icon: MapPin },
   { name: "Hotels", href: "/admin/hotels", icon: Hotel },
   { name: "Guides", href: "/admin/guides", icon: Users },
-  { name: "Users", href: "/admin?module=users", icon: UserRound },
+  { name: "Users", href: "/admin/users", icon: UserRound },
   { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
 ];
