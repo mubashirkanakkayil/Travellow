@@ -81,7 +81,7 @@ export default function DestinationCard({ destination }) {
               ₹{startingPrice.toLocaleString("en-IN")} <span className="text-xs font-normal text-mutedText">/ person</span>
             </span>
           </div>
-          <Link href="/destinations">
+          <Link href={`/destinations/${destination.slug || _id || id}`}>
             <Button variant="softCoral" size="sm">
               Explore
               <ArrowRight size={14} />
