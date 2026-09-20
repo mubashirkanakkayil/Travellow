@@ -22,6 +22,7 @@ import {
   Sun,
   Sunset,
   Moon,
+  CloudSun,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -499,6 +500,23 @@ export default function AIPlannerSection() {
               <p className="text-white/90 text-sm sm:text-base leading-relaxed max-w-3xl">
                 {planResult.summary}
               </p>
+
+              {/* Weather Consideration Banner */}
+              {planResult.weatherConsideration && (
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-5 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-coral-500/30 text-coral-300 shrink-0">
+                    <CloudSun size={20} />
+                  </div>
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    <span className="font-bold text-coral-300 block uppercase tracking-wider text-[11px]">
+                      Weather Consideration
+                    </span>
+                    <p className="text-white/90 leading-relaxed font-medium">
+                      {planResult.weatherConsideration}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Day-by-Day Itinerary Timeline */}

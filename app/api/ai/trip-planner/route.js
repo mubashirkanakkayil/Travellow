@@ -96,6 +96,38 @@ export async function POST(req) {
     const hotels = await Hotel.find({ destination: foundDestination._id }).lean();
     const guides = await Guide.find({ destination: foundDestination._id }).lean();
 
+    // Fetch live weather data safely from OpenWeather if coordinates exist
+    let weatherData = null;
+    const lat = Number(foundDestination.latitude);
+    const lon = Number(foundDestination.longitude);
+
+    if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0) && process.env.OPENWEATHER_API_KEY) {
+      try {
+        const apiKey = process.env.OPENWEATHER_API_KEY.trim();
+        if (apiKey && apiKey !== "your_openweather_api_key_here") {
+          const openWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${encodeURIComponent(apiKey)}&units=metric`;
+          const wRes = await fetch(openWeatherUrl, {
+            headers: { Accept: "application/json" },
+            next: { revalidate: 600 },
+          });
+
+          if (wRes.ok) {
+            const wJson = await wRes.json();
+            weatherData = {
+              temperature: Math.round(wJson.main?.temp ?? 0),
+              feelsLike: Math.round(wJson.main?.feels_like ?? wJson.main?.temp ?? 0),
+              humidity: wJson.main?.humidity ?? 0,
+              windSpeed: Number((wJson.wind?.speed ?? 0).toFixed(1)),
+              condition: wJson.weather?.[0]?.main || "Clear",
+              description: wJson.weather?.[0]?.description || "clear sky",
+            };
+          }
+        }
+      } catch (wErr) {
+        console.warn("Non-fatal error fetching weather for AI trip planner:", wErr.message);
+      }
+    }
+
     // 5. Generate Plan via Gemini AI
     const aiOutput = await generateAIPlan(
       {
@@ -108,6 +140,7 @@ export async function POST(req) {
       },
       {
         destination: foundDestination,
+        weather: weatherData,
         hotels,
         guides,
       }
@@ -187,6 +220,12 @@ export async function POST(req) {
       sessionId,
       data: {
         summary: aiOutput.summary || `Personalized ${parsedDuration}-day trip to ${foundDestination.name}`,
+        weatherConsideration:
+          aiOutput.weatherConsideration ||
+          (weatherData
+            ? `Current condition in ${foundDestination.name} is ${weatherData.description} at ${weatherData.temperature}°C.`
+            : "Weather data is currently unavailable."),
+        weather: weatherData,
         destination: {
           id: foundDestination._id.toString(),
           name: foundDestination.name,

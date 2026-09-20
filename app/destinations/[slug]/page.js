@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import DestinationMap from "@/components/maps/DestinationMap";
+import WeatherCard from "@/components/weather/WeatherCard";
 import HotelCard from "@/components/hotels/HotelCard";
 import GuideCard from "@/components/guides/GuideCard";
 import Badge from "@/components/ui/Badge";
@@ -359,9 +360,16 @@ export default function DestinationDetailPage({ params: initialParams }) {
             )}
           </div>
 
-          {/* Right Column: Google Map & Quick Booking Sidebar (5 cols) */}
+          {/* Right Column: Weather, Google Map & Quick Booking Sidebar (5 cols) */}
           <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
             
+            {/* Live Weather Card */}
+            <WeatherCard
+              latitude={latitude}
+              longitude={longitude}
+              destinationName={name}
+            />
+
             {/* Google Map Box */}
             <div className="bg-white p-4 rounded-3xl border border-borderLine shadow-lg space-y-3">
               <div className="flex items-center justify-between px-2">
