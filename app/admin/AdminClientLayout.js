@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -9,6 +10,7 @@ import {
   MapPin,
   Hotel,
   Users,
+  FileCheck,
   CalendarCheck,
   Star,
   UserRound,
@@ -26,6 +28,7 @@ const sidebarNavItems = [
   { name: "Destinations", href: "/admin/destinations", icon: MapPin },
   { name: "Hotels", href: "/admin/hotels", icon: Hotel },
   { name: "Guides", href: "/admin/guides", icon: Users },
+  { name: "Guide Applications", href: "/admin/guide-applications", icon: FileCheck, badgeKey: "pendingApplications" },
   { name: "Users", href: "/admin/users", icon: UserRound },
   { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
@@ -33,8 +36,26 @@ const sidebarNavItems = [
 
 export default function AdminClientLayout({ user, children }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
+
+  React.useEffect(() => {
+    async function fetchPendingStats() {
+      try {
+        const res = await fetch("/api/admin/guide-applications?status=PENDING&limit=1");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.stats) {
+            setPendingCount(json.stats.pending || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch pending applications count for sidebar:", err);
+      }
+    }
+    fetchPendingStats();
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -64,8 +85,15 @@ export default function AdminClientLayout({ user, children }) {
             </button>
 
             <Link href="/admin" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-coral-500 flex items-center justify-center text-white font-bold shadow-md">
-                <Compass size={20} />
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md shrink-0 border border-slate-700 bg-white">
+                <Image
+                  src="/logo.png"
+                  alt="Travellow Logo"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
               </div>
               <div>
                 <span className="font-display font-extrabold text-lg text-white tracking-tight block leading-tight">
@@ -95,7 +123,6 @@ export default function AdminClientLayout({ user, children }) {
             {/* View Website Link */}
             <Link
               href="/"
-              target="_blank"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 transition-colors"
             >
               <span>View Website</span>
@@ -137,14 +164,23 @@ export default function AdminClientLayout({ user, children }) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
                     isActive
                       ? "bg-coral-500 text-white shadow-md shadow-coral-500/20"
                       : "text-bodyText hover:bg-secondaryBg hover:text-primaryText"
                   }`}
                 >
-                  <Icon size={16} />
-                  <span>{item.name}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badgeKey === "pendingApplications" && pendingCount > 0 && (
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                      isActive ? "bg-white text-coral-600" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {pendingCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -170,7 +206,16 @@ export default function AdminClientLayout({ user, children }) {
               <div className="space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-borderLine">
                   <div className="flex items-center gap-2">
-                    <Compass size={20} className="text-coral-500" />
+                    <div className="w-7 h-7 rounded-lg overflow-hidden shadow border border-slate-200 bg-white shrink-0">
+                      <Image
+                        src="/logo.png"
+                        alt="Travellow Logo"
+                        width={28}
+                        height={28}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
+                    </div>
                     <span className="font-bold text-sm text-primaryText">Admin Menu</span>
                   </div>
                   <button onClick={() => setMobileSidebarOpen(false)} className="text-slate-400">

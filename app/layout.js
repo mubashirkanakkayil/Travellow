@@ -19,6 +19,11 @@ export const metadata = {
   title: "Travellow - AI-Powered Smart Tour Guide & Travel Booking",
   description: "Discover curated destinations, book luxury stays, connect with verified local tour guides, and build smart trip itineraries powered by Google Gemini.",
   keywords: ["travel", "AI travel guide", "tour guide", "hotel booking", "Kerala", "Bali", "Japan", "Switzerland"],
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {

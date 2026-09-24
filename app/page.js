@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/session";
 import Hero from "@/components/home/Hero";
 import SearchBar from "@/components/home/SearchBar";
 import PopularDestinations from "@/components/home/PopularDestinations";
@@ -7,7 +9,16 @@ import AIPlannerSection from "@/components/home/AIPlannerSection";
 import HowItWorks from "@/components/home/HowItWorks";
 import AIAssistantSection from "@/components/home/AIAssistantSection";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+
+  // If logged in as ADMIN, redirect directly to Admin Panel
+  if (user && user.role === "ADMIN") {
+    redirect("/admin");
+  }
+
   return (
     <div className="flex flex-col gap-0 w-full overflow-hidden">
       {/* 1. Hero Section (Video Inspired Dynamic Carousel) */}

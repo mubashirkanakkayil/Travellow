@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, Loader2, AlertCircle, Compass } from "lucide-react";
 import Input from "@/components/ui/Input";
@@ -42,8 +43,12 @@ export default function SignInPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Redirect to dashboard on successful login
-        router.push("/dashboard");
+        // Redirect ADMIN role directly to /admin, otherwise /dashboard
+        if (data.user?.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
         router.refresh();
       } else {
         setError(data.message || "Invalid credentials. Please try again.");
@@ -60,8 +65,15 @@ export default function SignInPage() {
       <div className="w-full max-w-md space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-borderLine shadow-sm">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-coral-100 text-coral-500 mb-1">
-            <Compass size={24} />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl overflow-hidden shadow-md border border-coral-200 bg-white mb-1">
+            <Image
+              src="/logo.png"
+              alt="Travellow Logo"
+              width={56}
+              height={56}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
           </div>
           <h2 className="font-display font-extrabold text-3xl text-primaryText tracking-tight">
             Welcome Back to Travellow

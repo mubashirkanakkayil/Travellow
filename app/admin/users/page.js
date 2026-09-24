@@ -153,65 +153,65 @@ export default function AdminUsersPage() {
       </div>
 
       {/* USER STATS SUMMARY CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
         
         {/* Total Users */}
-        <div className="bg-white p-4.5 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-bold text-mutedText uppercase tracking-wider block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between min-w-0">
+          <div className="space-y-1 min-w-0">
+            <span className="text-xs font-bold text-mutedText uppercase tracking-wider block truncate">
               Total Users
             </span>
-            <span className="font-display font-extrabold text-2xl text-primaryText block">
+            <span className="font-display font-extrabold text-2xl sm:text-3xl text-primaryText block">
               {roleCounts.total}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-            <UserRound size={20} />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 ml-2">
+            <UserRound size={22} />
           </div>
         </div>
 
         {/* Standard Users */}
-        <div className="bg-white p-4.5 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-bold text-mutedText uppercase tracking-wider block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between min-w-0">
+          <div className="space-y-1 min-w-0">
+            <span className="text-xs font-bold text-mutedText uppercase tracking-wider block truncate">
               Travelers
             </span>
-            <span className="font-display font-extrabold text-2xl text-teal-600 block">
+            <span className="font-display font-extrabold text-2xl sm:text-3xl text-teal-600 block">
               {roleCounts.userCount}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-            <UserCheck size={20} />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 ml-2">
+            <UserCheck size={22} />
           </div>
         </div>
 
         {/* Local Guides */}
-        <div className="bg-white p-4.5 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-bold text-mutedText uppercase tracking-wider block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between min-w-0">
+          <div className="space-y-1 min-w-0">
+            <span className="text-xs font-bold text-mutedText uppercase tracking-wider block truncate">
               Local Guides
             </span>
-            <span className="font-display font-extrabold text-2xl text-indigo-600 block">
+            <span className="font-display font-extrabold text-2xl sm:text-3xl text-indigo-600 block">
               {roleCounts.guideCount}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <Users size={20} />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 ml-2">
+            <Users size={22} />
           </div>
         </div>
 
         {/* Platform Admins */}
-        <div className="bg-white p-4.5 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-bold text-mutedText uppercase tracking-wider block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-borderLine shadow-sm flex items-center justify-between min-w-0">
+          <div className="space-y-1 min-w-0">
+            <span className="text-xs font-bold text-mutedText uppercase tracking-wider block truncate">
               Admins
             </span>
-            <span className="font-display font-extrabold text-2xl text-coral-600 block">
+            <span className="font-display font-extrabold text-2xl sm:text-3xl text-coral-600 block">
               {roleCounts.adminCount}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-coral-50 text-coral-500 flex items-center justify-center shrink-0">
-            <ShieldCheck size={20} />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-coral-50 text-coral-500 flex items-center justify-center shrink-0 ml-2">
+            <ShieldCheck size={22} />
           </div>
         </div>
 

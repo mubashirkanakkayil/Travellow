@@ -227,7 +227,7 @@ export default function AdminDashboardPage() {
                 <span className="font-display font-extrabold text-3xl text-primaryText">
                   {statsData.stats?.bookings || 0}
                 </span>
-                <span className="text-[11px] text-emerald-600 font-semibold block">Completed Orders</span>
+                <span className="text-[11px] text-emerald-600 font-semibold block">Platform Reservations</span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CalendarCheck size={24} />

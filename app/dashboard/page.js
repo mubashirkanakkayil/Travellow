@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import MyBookingsSection from "@/components/dashboard/MyBookingsSection";
+import GuideStatusCard from "@/components/dashboard/GuideStatusCard";
 import {
   User,
   Mail,
@@ -22,6 +23,11 @@ export default async function DashboardPage() {
 
   if (!user) {
     redirect("/sign-in");
+  }
+
+  // If logged in as ADMIN, redirect directly to Admin Panel
+  if (user.role === "ADMIN") {
+    redirect("/admin");
   }
 
   return (
@@ -99,6 +105,9 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Guide Status / Application Card */}
+        <GuideStatusCard userRole={user.role} />
 
         {/* Real My Bookings Interactive Section */}
         <MyBookingsSection />

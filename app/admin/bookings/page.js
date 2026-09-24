@@ -382,19 +382,19 @@ export default function AdminBookingsPage() {
         <>
           {/* DESKTOP TABLE VIEW */}
           <div className="hidden lg:block bg-white rounded-2xl border border-borderLine shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="w-full">
+              <table className="w-full text-left text-xs table-auto">
                 <thead className="bg-secondaryBg border-b border-borderLine text-mutedText font-semibold uppercase tracking-wider text-[10px]">
                   <tr>
-                    <th className="px-4 py-3.5">Customer</th>
-                    <th className="px-4 py-3.5">Type</th>
-                    <th className="px-4 py-3.5">Hotel / Guide</th>
-                    <th className="px-4 py-3.5">Destination</th>
-                    <th className="px-4 py-3.5">Dates / Duration</th>
-                    <th className="px-4 py-3.5 text-center">Guests</th>
-                    <th className="px-4 py-3.5 text-right">Amount</th>
-                    <th className="px-4 py-3.5 text-center">Status</th>
-                    <th className="px-4 py-3.5 text-right">Actions</th>
+                    <th className="px-3 py-3">Customer</th>
+                    <th className="px-2 py-3">Type</th>
+                    <th className="px-3 py-3">Hotel / Guide</th>
+                    <th className="px-3 py-3">Destination</th>
+                    <th className="px-3 py-3">Dates / Duration</th>
+                    <th className="px-2 py-3 text-center">Guests</th>
+                    <th className="px-3 py-3 text-right">Amount</th>
+                    <th className="px-2 py-3 text-center">Status</th>
+                    <th className="px-3 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borderLine">
@@ -404,26 +404,26 @@ export default function AdminBookingsPage() {
                       <tr key={b._id} className="hover:bg-slate-50/80 transition-colors">
                         
                         {/* Customer */}
-                        <td className="px-4 py-3.5">
-                          <span className="font-bold text-primaryText block">
+                        <td className="px-3 py-3 max-w-[140px]">
+                          <span className="font-bold text-primaryText block truncate" title={b.user?.name || "Guest User"}>
                             {b.user?.name || "Guest User"}
                           </span>
-                          <span className="text-[11px] text-mutedText block">
+                          <span className="text-[11px] text-mutedText block truncate" title={b.user?.email || "N/A"}>
                             {b.user?.email || "N/A"}
                           </span>
                         </td>
 
                         {/* Type Badge */}
-                        <td className="px-4 py-3.5">
-                          <Badge variant={isHotel ? "teal" : "coral"} className="text-[10px]">
+                        <td className="px-2 py-3">
+                          <Badge variant={isHotel ? "teal" : "coral"} className="text-[9px] px-1.5 py-0.5">
                             {isHotel ? "HOTEL" : "GUIDE"}
                           </Badge>
                         </td>
 
                         {/* Hotel / Guide Target */}
-                        <td className="px-4 py-3.5">
-                          <span className="font-semibold text-primaryText block">
-                            {isHotel ? b.hotel?.name || "Hotel Reservation" : b.guide?.name || "Local Guide Tour"}
+                        <td className="px-3 py-3 max-w-[150px]">
+                          <span className="font-semibold text-primaryText block truncate" title={isHotel ? b.hotel?.name || "Hotel Stay" : b.guide?.name || "Guide Tour"}>
+                            {isHotel ? b.hotel?.name || "Hotel Stay" : b.guide?.name || "Guide Tour"}
                           </span>
                           <span className="text-[10px] text-mutedText block font-mono">
                             ID: {b._id.slice(-6)}
@@ -431,21 +431,21 @@ export default function AdminBookingsPage() {
                         </td>
 
                         {/* Destination */}
-                        <td className="px-4 py-3.5">
-                          <span className="font-medium text-primaryText block">
+                        <td className="px-3 py-3 max-w-[130px]">
+                          <span className="font-medium text-primaryText block truncate" title={b.destination?.name || "Target City"}>
                             {b.destination?.name || "Target City"}
                           </span>
-                          <span className="text-[11px] text-mutedText block">
+                          <span className="text-[11px] text-mutedText block truncate">
                             {b.destination?.country || "India"}
                           </span>
                         </td>
 
                         {/* Dates / Duration */}
-                        <td className="px-4 py-3.5">
-                          <span className="font-medium text-primaryText block">
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <span className="font-medium text-primaryText block text-[11px]">
                             {formatDate(b.startDate)}
                           </span>
-                          <span className="text-[11px] text-mutedText block">
+                          <span className="text-[10px] text-mutedText block">
                             {isHotel
                               ? b.endDate ? `to ${formatDate(b.endDate)}` : "1 Night"
                               : `${b.hours || 1} Hours`}
@@ -453,23 +453,23 @@ export default function AdminBookingsPage() {
                         </td>
 
                         {/* Guests */}
-                        <td className="px-4 py-3.5 text-center font-medium text-primaryText">
+                        <td className="px-2 py-3 text-center font-medium text-primaryText text-xs">
                           {b.guests || 1}
                         </td>
 
                         {/* Amount */}
-                        <td className="px-4 py-3.5 text-right font-bold text-primaryText">
+                        <td className="px-3 py-3 text-right font-bold text-coral-600 text-xs whitespace-nowrap">
                           {formatCurrency(b.totalAmount, b.currency)}
                         </td>
 
                         {/* Status */}
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-2 py-3 text-center whitespace-nowrap">
                           {getStatusBadge(b.status)}
                         </td>
 
                         {/* Actions */}
-                        <td className="px-4 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 py-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="secondary"
                               size="sm"
@@ -477,9 +477,9 @@ export default function AdminBookingsPage() {
                                 setSelectedBooking(b);
                                 setDetailModalOpen(true);
                               }}
-                              className="h-8 px-2.5 text-[11px]"
+                              className="h-7 px-2 text-[10px]"
                             >
-                              <Eye size={13} />
+                              <Eye size={12} />
                               <span>View</span>
                             </Button>
 
@@ -490,7 +490,7 @@ export default function AdminBookingsPage() {
                                 setSelectedBooking(b);
                                 setStatusModalOpen(true);
                               }}
-                              className="h-8 px-2.5 text-[11px]"
+                              className="h-7 px-2 text-[10px]"
                             >
                               Status
                             </Button>

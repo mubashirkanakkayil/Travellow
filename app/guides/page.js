@@ -1,12 +1,17 @@
+"use me";
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import GuideCard from "@/components/guides/GuideCard";
 import Input from "@/components/ui/Input";
 import { Search, UserCheck, Loader2, MapPin } from "lucide-react";
 
-export default function GuidesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+function GuidesListContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams ? searchParams.get("search") || "" : "";
+  
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,6 +51,55 @@ export default function GuidesPage() {
   }, [searchQuery]);
 
   return (
+    <div className="space-y-8">
+      {/* Search */}
+      <div className="max-w-md">
+        <Input
+          icon={Search}
+          placeholder="Search guide name or location..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="py-24 flex flex-col items-center justify-center gap-3 text-coral-500">
+          <Loader2 size={36} className="animate-spin" />
+          <span className="text-sm font-medium text-bodyText">Querying MongoDB local guides...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!loading && error && (
+        <div className="text-center py-16 space-y-3 bg-secondaryBg rounded-2xl border border-borderLine">
+          <p className="text-sm font-semibold text-primaryText">{error}</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && guides.length === 0 && (
+        <div className="text-center py-16 space-y-3 bg-secondaryBg rounded-2xl border border-borderLine">
+          <MapPin size={36} className="mx-auto text-coral-500" />
+          <h3 className="font-display font-bold text-lg text-primaryText">No guides match your search</h3>
+          <p className="text-xs text-mutedText">Try searching for "Rajesh", "Wayan", "Kenji", or "Elena".</p>
+        </div>
+      )}
+
+      {/* Grid */}
+      {!loading && !error && guides.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {guides.map((guide) => (
+            <GuideCard key={guide._id || guide.id} guide={guide} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function GuidesPage() {
+  return (
     <div className="py-12 bg-white">
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
@@ -63,48 +117,14 @@ export default function GuidesPage() {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="max-w-md">
-          <Input
-            icon={Search}
-            placeholder="Search guide name or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        {/* Loading State */}
-        {loading && (
+        <Suspense fallback={
           <div className="py-24 flex flex-col items-center justify-center gap-3 text-coral-500">
             <Loader2 size={36} className="animate-spin" />
-            <span className="text-sm font-medium text-bodyText">Querying MongoDB local guides...</span>
+            <span className="text-sm font-medium text-bodyText">Loading guides directory...</span>
           </div>
-        )}
-
-        {/* Error State */}
-        {!loading && error && (
-          <div className="text-center py-16 space-y-3 bg-secondaryBg rounded-2xl border border-borderLine">
-            <p className="text-sm font-semibold text-primaryText">{error}</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !error && guides.length === 0 && (
-          <div className="text-center py-16 space-y-3 bg-secondaryBg rounded-2xl border border-borderLine">
-            <MapPin size={36} className="mx-auto text-coral-500" />
-            <h3 className="font-display font-bold text-lg text-primaryText">No guides match your search</h3>
-            <p className="text-xs text-mutedText">Try searching for "Rajesh", "Wayan", "Kenji", or "Elena".</p>
-          </div>
-        )}
-
-        {/* Grid */}
-        {!loading && !error && guides.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {guides.map((guide) => (
-              <GuideCard key={guide._id || guide.id} guide={guide} />
-            ))}
-          </div>
-        )}
+        }>
+          <GuidesListContent />
+        </Suspense>
 
       </div>
     </div>

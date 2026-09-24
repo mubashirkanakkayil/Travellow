@@ -2,9 +2,17 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Compass, Mail, Phone, MapPin, Globe, Heart } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Suppress public Footer on all Admin pages
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
   return (
     <footer className="bg-secondaryBg border-t border-borderLine pt-16 pb-12">
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,8 +20,15 @@ export default function Footer() {
           {/* Brand & Summary */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-coral-500 flex items-center justify-center text-white shadow-md shadow-coral-500/20">
-                <Compass size={22} />
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-coral-500/20 shrink-0 border border-coral-200 bg-white">
+                <Image
+                  src="/logo.png"
+                  alt="Travellow Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-display font-bold text-xl text-primaryText tracking-tight">

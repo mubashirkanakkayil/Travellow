@@ -141,31 +141,16 @@ export default function AIAssistantSection() {
 
     setError("");
 
-    // 1. Verify Auth first
+    // 1. Verify Auth status
+    if (authStatus === "unauthenticated") {
+      setShowAuthModal(true);
+      return;
+    }
+
     try {
       setLoading(true);
-      const authRes = await fetch("/api/auth/me");
-      let isAuthenticated = false;
 
-      if (authRes.ok) {
-        const authData = await authRes.json();
-        if (authData.authenticated && authData.user) {
-          isAuthenticated = true;
-          setAuthStatus("authenticated");
-        } else {
-          setAuthStatus("unauthenticated");
-        }
-      } else {
-        setAuthStatus("unauthenticated");
-      }
-
-      if (!isAuthenticated) {
-        setShowAuthModal(true);
-        setLoading(false);
-        return;
-      }
-
-      // Add user message to UI immediately
+      // Add user message to UI immediately for instant feedback
       const userMsgObj = { role: "USER", content: textToSend };
       setMessages((prev) => [...prev, userMsgObj]);
       if (!customText) setInputMessage("");
@@ -173,14 +158,20 @@ export default function AIAssistantSection() {
       // 2. Dispatch API request to POST /api/ai/chat
       const res = await fetch("/api/ai/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: textToSend,
           sessionId: sessionId || null,
         }),
       });
+
+      if (res.status === 401) {
+        setAuthStatus("unauthenticated");
+        setShowAuthModal(true);
+        // Remove optimistic user message on auth failure
+        setMessages((prev) => prev.slice(0, -1));
+        return;
+      }
 
       const data = await res.json();
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -29,6 +30,7 @@ const CURRENCY_OPTIONS = [
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [accountType, setAccountType] = useState("traveler"); // "traveler" | "guide"
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -80,8 +82,13 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Redirect to dashboard on successful registration
-        router.push("/dashboard");
+        // Registered User role is ALWAYS initial "USER"
+        // If "guide" was selected, redirect to guide application page
+        if (accountType === "guide") {
+          router.push("/guide/apply");
+        } else {
+          router.push("/dashboard");
+        }
         router.refresh();
       } else {
         setError(data.message || "Registration failed. Please try again.");
@@ -98,8 +105,15 @@ export default function SignUpPage() {
       <div className="w-full max-w-lg space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-borderLine shadow-sm">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-coral-100 text-coral-500 mb-1">
-            <Compass size={24} />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl overflow-hidden shadow-md border border-coral-200 bg-white mb-1">
+            <Image
+              src="/logo.png"
+              alt="Travellow Logo"
+              width={56}
+              height={56}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
           </div>
           <h2 className="font-display font-extrabold text-3xl text-primaryText tracking-tight">
             Create Your Travellow Account
@@ -116,6 +130,44 @@ export default function SignUpPage() {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Account Type Selection */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-primaryText block">
+            Choose Account Type
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setAccountType("traveler")}
+              className={`p-4 rounded-2xl border text-left transition-all ${
+                accountType === "traveler"
+                  ? "border-coral-500 bg-coral-50/50 ring-2 ring-coral-500/20"
+                  : "border-borderLine bg-white hover:bg-gray-50"
+              }`}
+            >
+              <span className="font-bold text-sm text-primaryText block">Traveler</span>
+              <span className="text-xs text-mutedText block mt-0.5">
+                Plan trips and book travel services
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccountType("guide")}
+              className={`p-4 rounded-2xl border text-left transition-all ${
+                accountType === "guide"
+                  ? "border-coral-500 bg-coral-50/50 ring-2 ring-coral-500/20"
+                  : "border-borderLine bg-white hover:bg-gray-50"
+              }`}
+            >
+              <span className="font-bold text-sm text-primaryText block">Become a Guide</span>
+              <span className="text-xs text-mutedText block mt-0.5">
+                Apply to become a local Travellow guide
+              </span>
+            </button>
+          </div>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

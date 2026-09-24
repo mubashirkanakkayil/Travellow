@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Compass, Menu, X, Sparkles, User, LogIn, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import Button from "@/components/ui/Button";
@@ -30,7 +31,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch current user authentication status
+  // Fetch current user authentication status on mount
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -49,7 +50,7 @@ export default function Navbar() {
       }
     }
     checkAuth();
-  }, [pathname]);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -61,6 +62,11 @@ export default function Navbar() {
       console.error("Logout error:", err);
     }
   };
+
+  // Suppress public Navbar on all Admin pages (placed after all hooks)
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <header
@@ -74,8 +80,15 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-coral-500 flex items-center justify-center text-white shadow-md shadow-coral-500/20 group-hover:scale-105 transition-transform">
-              <Compass size={22} className="group-hover:rotate-45 transition-transform duration-300" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-coral-500/20 group-hover:scale-105 transition-transform shrink-0 border border-coral-200/80 bg-white">
+              <Image
+                src="/logo.png"
+                alt="Travellow Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold text-xl text-primaryText tracking-tight">
@@ -120,6 +133,14 @@ export default function Navbar() {
                       <ShieldCheck size={16} />
                       Admin Panel
                     </Button>
+                  </Link>
+                )}
+                {authUser.role === "LOCAL_GUIDE" && (
+                  <Link href="/dashboard">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                      <ShieldCheck size={14} />
+                      Local Guide
+                    </span>
                   </Link>
                 )}
                 <Link href="/dashboard">
