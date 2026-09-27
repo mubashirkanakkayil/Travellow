@@ -82,6 +82,9 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (data.success) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth-change"));
+        }
         // Registered User role is ALWAYS initial "USER"
         // If "guide" was selected, redirect to guide application page
         if (accountType === "guide") {

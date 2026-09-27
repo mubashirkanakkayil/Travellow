@@ -74,17 +74,21 @@ export default function DestinationDetailPage({ params: initialParams }) {
         const destObj = destData.data;
         setDestination(destObj);
 
-        // Fetch Hotels for this destination in parallel
+        // Fetch Hotels and Guides for this destination in parallel
         const targetIdOrSlug = destObj.slug || destObj._id;
-        const hotelsRes = await fetch(`/api/hotels?destination=${targetIdOrSlug}`);
-        const hotelsData = await hotelsRes.json();
+        const [hotelsRes, guidesRes] = await Promise.all([
+          fetch(`/api/hotels?destination=${targetIdOrSlug}`),
+          fetch(`/api/guides?destination=${targetIdOrSlug}`),
+        ]);
+
+        const [hotelsData, guidesData] = await Promise.all([
+          hotelsRes.json(),
+          guidesRes.json(),
+        ]);
+
         if (hotelsData.success) {
           setHotels(hotelsData.data || []);
         }
-
-        // Fetch Guides for this destination in parallel
-        const guidesRes = await fetch(`/api/guides?destination=${targetIdOrSlug}`);
-        const guidesData = await guidesRes.json();
         if (guidesData.success) {
           setGuides(guidesData.data || []);
         }

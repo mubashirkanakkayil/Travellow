@@ -2,6 +2,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FloatingAIChat from "@/components/ai/FloatingAIChat";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
         <Navbar />
         <main className="flex-grow">{children}</main>
         <Footer />
+        <FloatingAIChat />
       </body>
     </html>
   );

@@ -88,7 +88,7 @@ export default function AIPlannerSection() {
   const [selectedGuideForBooking, setSelectedGuideForBooking] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // 1. Initial Authentication Check on Mount
+  // 1. Initial Authentication Check on Mount & on auth-change
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -110,6 +110,12 @@ export default function AIPlannerSection() {
       }
     }
     checkAuth();
+
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
   const toggleInterest = (interest) => {

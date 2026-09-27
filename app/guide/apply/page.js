@@ -1,4 +1,3 @@
-"use me";
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -26,7 +25,22 @@ import {
   DollarSign,
   Calendar,
   FileText,
+  UploadCloud,
+  FileCheck,
+  Trash2,
+  ShieldCheck,
+  Loader2,
+  Paperclip,
 } from "lucide-react";
+
+const DOCUMENT_TYPES = [
+  { value: "GOVERNMENT_ID", label: "Government ID (Passport / License / National ID)", required: true },
+  { value: "EXPERIENCE_CERTIFICATE", label: "Experience Certificate", required: false },
+  { value: "TOURISM_CERTIFICATE", label: "Tourism / Guide Certificate", required: false },
+  { value: "GUIDE_LICENSE", label: "Guide License / Permit", required: false },
+  { value: "LANGUAGE_CERTIFICATE", label: "Language Certificate", required: false },
+  { value: "OTHER", label: "Other Supporting Document", required: false },
+];
 
 export default function GuideApplyPage() {
   const router = useRouter();
@@ -38,6 +52,17 @@ export default function GuideApplyPage() {
   const [destinations, setDestinations] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // Profile Photo Upload State
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
+  // Verification Documents State
+  const [verificationDocs, setVerificationDocs] = useState([]);
+  const [selectedDocType, setSelectedDocType] = useState("GOVERNMENT_ID");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docError, setDocError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -72,7 +97,6 @@ export default function GuideApplyPage() {
           return;
         }
 
-        // Role check: ADMIN should be redirected to /admin
         if (userData.user.role === "ADMIN") {
           router.push("/admin");
           return;
@@ -80,7 +104,6 @@ export default function GuideApplyPage() {
 
         setCurrentUser(userData.user);
 
-        // Populate defaults from user profile
         setFormData((prev) => ({
           ...prev,
           fullName: userData.user.name || "",
@@ -88,6 +111,13 @@ export default function GuideApplyPage() {
           phone: userData.user.phone || "",
           country: userData.user.country || "",
         }));
+
+        if (userData.user.profileImage) {
+          setProfilePhoto({
+            secureUrl: userData.user.profileImage,
+            fileName: "Existing Profile Image",
+          });
+        }
 
         // 2. Fetch destinations
         const destRes = await fetch("/api/destinations");
@@ -124,6 +154,81 @@ export default function GuideApplyPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Helper for Uploading File to Cloudinary Endpoint
+  const handleFileUpload = async (file, category) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("category", category);
+
+    const res = await fetch("/api/guide-applications/upload-signature", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to upload file.");
+    }
+    return data.data;
+  };
+
+  // Handle Profile Photo Upload
+  const handleProfileImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfileError("");
+    setUploadingProfile(true);
+
+    try {
+      const uploadedData = await handleFileUpload(file, "profile");
+      setProfilePhoto(uploadedData);
+      setFormData((prev) => ({ ...prev, profileImage: uploadedData.secureUrl }));
+    } catch (err) {
+      setProfileError(err.message || "Failed to upload profile photo.");
+    } finally {
+      setUploadingProfile(false);
+    }
+  };
+
+  // Handle Verification Document Upload
+  const handleDocUploadChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setDocError("");
+    setUploadingDoc(true);
+
+    try {
+      const uploadedData = await handleFileUpload(file, "document");
+      
+      const newDoc = {
+        type: selectedDocType,
+        fileName: uploadedData.fileName || file.name,
+        publicId: uploadedData.publicId,
+        secureUrl: uploadedData.secureUrl,
+        resourceType: uploadedData.resourceType || "image",
+        fileSize: uploadedData.fileSize || file.size,
+        status: "PENDING",
+      };
+
+      setVerificationDocs((prev) => {
+        const filtered = prev.filter((d) => d.type !== selectedDocType);
+        return [...filtered, newDoc];
+      });
+
+      e.target.value = "";
+    } catch (err) {
+      setDocError(err.message || "Failed to upload verification document.");
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const removeDoc = (typeToRemove) => {
+    setVerificationDocs((prev) => prev.filter((d) => d.type !== typeToRemove));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -135,6 +240,20 @@ export default function GuideApplyPage() {
 
     if (!formData.destination) {
       setError("Please select a preferred destination.");
+      return;
+    }
+
+    const currentProfileUrl = profilePhoto?.secureUrl || formData.profileImage;
+    if (!currentProfileUrl) {
+      setError("Profile Photo is required. Please upload your profile photo.");
+      return;
+    }
+
+    const hasGovId = verificationDocs.some(
+      (d) => d.type === "GOVERNMENT_ID" && d.secureUrl
+    );
+    if (!hasGovId) {
+      setError("Government ID document is required for identity verification.");
       return;
     }
 
@@ -173,7 +292,9 @@ export default function GuideApplyPage() {
           phone: formData.phone.trim(),
           country: formData.country.trim(),
           destination: formData.destination,
-          profileImage: formData.profileImage.trim(),
+          profileImage: currentProfileUrl,
+          profileImageMetadata: profilePhoto || { secureUrl: currentProfileUrl },
+          verificationDocuments: verificationDocs,
           languages: formData.languages,
           specialties: formData.specialties,
           experienceYears: exp,
@@ -260,7 +381,7 @@ export default function GuideApplyPage() {
                 Your guide application has been submitted successfully.
               </h1>
               <p className="text-bodyText text-sm leading-relaxed max-w-lg mx-auto">
-                Thank you for applying to become a Travellow Local Guide! Our admin team is reviewing your application details. You will be notified once a decision is made.
+                Thank you for applying to become a Travellow Local Guide! Our admin team is reviewing your application and submitted verification documents.
               </p>
             </div>
 
@@ -275,14 +396,14 @@ export default function GuideApplyPage() {
                   <span>{pendingApplication.destination?.name || "Selected Destination"}</span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="font-semibold text-primaryText">Submitted On:</span>
-                  <span>{new Date(pendingApplication.createdAt).toLocaleDateString()}</span>
+                  <span className="font-semibold text-primaryText">Submitted Documents:</span>
+                  <span>
+                    {pendingApplication.verificationDocuments?.length || 1} Document(s) Attached
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-primaryText">Rate:</span>
-                  <span>
-                    {pendingApplication.currency} {pendingApplication.hourlyRate} / hr
-                  </span>
+                  <span className="font-semibold text-primaryText">Submitted On:</span>
+                  <span>{new Date(pendingApplication.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             )}
@@ -314,7 +435,7 @@ export default function GuideApplyPage() {
             Become a Local Guide
           </h1>
           <p className="text-bodyText text-sm sm:text-base max-w-xl mx-auto">
-            Share your local knowledge and help travelers experience destinations better.
+            Share your local knowledge, submit identity verification documents, and join Travellow's vetted network of tour guides.
           </p>
         </div>
 
@@ -393,14 +514,14 @@ export default function GuideApplyPage() {
               </div>
             </div>
 
-            {/* Section 2: Destination & Profile */}
+            {/* Section 2: Destination & Profile Photo */}
             <div className="space-y-6 pb-6 border-b border-gray-100">
               <h2 className="text-lg font-bold text-primaryText flex items-center gap-2">
                 <MapPin className="text-coral-500" size={20} />
-                Guide Destination & Media
+                Guide Destination & Profile Photo
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                 <div>
                   <label className="block text-xs font-bold text-primaryText uppercase tracking-wider mb-2">
                     Preferred Destination *
@@ -423,22 +544,205 @@ export default function GuideApplyPage() {
                   </select>
                 </div>
 
+                {/* Profile Photo Cloudinary Uploader */}
                 <div>
                   <label className="block text-xs font-bold text-primaryText uppercase tracking-wider mb-2">
-                    Profile Image URL
+                    Profile Photo * (JPG, PNG, WEBP - Max 5MB)
                   </label>
-                  <Input
-                    type="url"
-                    name="profileImage"
-                    value={formData.profileImage}
-                    onChange={handleChange}
-                    placeholder="https://images.unsplash.com/photo-..."
-                  />
+
+                  {profileError && (
+                    <p className="text-xs text-red-600 font-medium mb-2">{profileError}</p>
+                  )}
+
+                  {profilePhoto ? (
+                    <div className="flex items-center gap-4 p-3 bg-secondaryBg border border-borderLine rounded-2xl">
+                      <img
+                        src={profilePhoto.secureUrl}
+                        alt="Profile preview"
+                        className="w-16 h-16 rounded-xl object-cover border border-coral-200"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-primaryText truncate">
+                          {profilePhoto.fileName || "profile_photo.jpg"}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
+                          <CheckCircle2 size={12} /> Uploaded to Cloudinary
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfilePhoto(null);
+                          setFormData((prev) => ({ ...prev, profileImage: "" }));
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-white transition-colors"
+                        title="Remove photo"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-borderLine hover:border-coral-500 rounded-2xl p-4 text-center transition-colors bg-secondaryBg/50">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                        onChange={handleProfileImageChange}
+                        disabled={uploadingProfile}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                      />
+                      <div className="flex flex-col items-center gap-1 text-xs text-bodyText">
+                        {uploadingProfile ? (
+                          <>
+                            <Loader2 size={24} className="text-coral-500 animate-spin" />
+                            <span className="font-semibold text-coral-600">Uploading photo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud size={24} className="text-coral-500 mb-1" />
+                            <span className="font-bold text-primaryText">Click or drop profile photo</span>
+                            <span className="text-mutedText text-[11px]">JPG, PNG, WEBP up to 5 MB</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Expertise & Pricing */}
+            {/* Section 3: Verification Documents Upload Section */}
+            <div className="space-y-6 pb-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold text-primaryText flex items-center gap-2">
+                  <ShieldCheck className="text-coral-500" size={20} />
+                  Verification Documents
+                </h2>
+                <p className="text-xs text-bodyText mt-1">
+                  Government-issued identification is collected for identity verification. Additional certificates or permits can be submitted when applicable.
+                </p>
+              </div>
+
+              {docError && (
+                <p className="text-xs text-red-600 font-semibold bg-red-50 p-2.5 rounded-xl border border-red-200">
+                  {docError}
+                </p>
+              )}
+
+              {/* Upload Input Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end bg-secondaryBg p-4 rounded-2xl border border-borderLine">
+                <div className="sm:col-span-7">
+                  <label className="block text-xs font-bold text-primaryText uppercase tracking-wider mb-2">
+                    Document Type to Attach
+                  </label>
+                  <select
+                    value={selectedDocType}
+                    onChange={(e) => setSelectedDocType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-borderLine rounded-xl text-primaryText font-medium text-xs focus:outline-none focus:ring-2 focus:ring-coral-500"
+                  >
+                    {DOCUMENT_TYPES.map((dt) => (
+                      <option key={dt.value} value={dt.value}>
+                        {dt.label} {dt.required ? "*" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="sm:col-span-5 relative">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleDocUploadChange}
+                    disabled={uploadingDoc}
+                    id="verification-doc-input"
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="verification-doc-input"
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm ${
+                      uploadingDoc
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-coral-500 hover:bg-coral-600 text-white"
+                    }`}
+                  >
+                    {uploadingDoc ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud size={16} />
+                        Upload {selectedDocType === "GOVERNMENT_ID" ? "Government ID *" : "Document"}
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Uploaded Documents List */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between text-xs font-bold text-primaryText border-b border-gray-100 pb-2">
+                  <span>Attached Documents ({verificationDocs.length})</span>
+                  <span className="text-coral-500 text-[11px]">Government ID Required *</span>
+                </div>
+
+                {verificationDocs.length === 0 ? (
+                  <div className="p-6 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs text-mutedText">
+                    No documents uploaded yet. <strong className="text-coral-600">Government ID is required</strong> to submit application.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {verificationDocs.map((doc) => {
+                      const docTypeInfo = DOCUMENT_TYPES.find((t) => t.value === doc.type);
+                      const isGovId = doc.type === "GOVERNMENT_ID";
+                      return (
+                        <div
+                          key={doc.type}
+                          className="flex items-center justify-between p-3.5 bg-white border border-borderLine rounded-2xl shadow-sm text-xs"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2 rounded-xl shrink-0 ${isGovId ? "bg-coral-50 text-coral-600" : "bg-blue-50 text-blue-600"}`}>
+                              <FileCheck size={18} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-primaryText">
+                                  {docTypeInfo?.label || doc.type}
+                                </span>
+                                {isGovId && (
+                                  <Badge variant="coral" className="text-[10px] py-0 px-1.5">
+                                    Required
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-mutedText text-[11px] truncate mt-0.5">
+                                {doc.fileName} • Cloudinary Attached
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Badge variant="success" className="text-[10px]">
+                              Ready
+                            </Badge>
+                            <button
+                              type="button"
+                              onClick={() => removeDoc(doc.type)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition-colors"
+                              title="Remove document"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 4: Expertise & Pricing */}
             <div className="space-y-6 pb-6 border-b border-gray-100">
               <h2 className="text-lg font-bold text-primaryText flex items-center gap-2">
                 <Award className="text-coral-500" size={20} />
@@ -539,7 +843,7 @@ export default function GuideApplyPage() {
               </div>
             </div>
 
-            {/* Section 4: Bio & Motivation */}
+            {/* Section 5: Bio & Motivation */}
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-primaryText flex items-center gap-2">
                 <FileText className="text-coral-500" size={20} />
@@ -589,7 +893,7 @@ export default function GuideApplyPage() {
                 type="submit"
                 variant="primary"
                 size="lg"
-                disabled={submitting}
+                disabled={submitting || uploadingProfile || uploadingDoc}
                 className="w-full sm:w-auto flex items-center justify-center gap-2"
               >
                 {submitting ? (

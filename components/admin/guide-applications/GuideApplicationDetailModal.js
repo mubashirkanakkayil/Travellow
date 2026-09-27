@@ -1,7 +1,6 @@
-"use me";
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import {
@@ -19,6 +18,8 @@ import {
   Calendar,
   FileText,
   AlertCircle,
+  ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function GuideApplicationDetailModal({
@@ -26,12 +27,52 @@ export default function GuideApplicationDetailModal({
   onClose,
   onActionComplete,
 }) {
+  const [currentApp, setCurrentApp] = useState(application);
   const [submitting, setSubmitting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [error, setError] = useState("");
+  const [updatingDocType, setUpdatingDocType] = useState(null);
+  const [docActionError, setDocActionError] = useState("");
 
-  if (!application) return null;
+  useEffect(() => {
+    setCurrentApp(application);
+  }, [application]);
+
+  if (!currentApp) return null;
+
+  const handleVerifyDocument = async (docType, action, note = "") => {
+    try {
+      setUpdatingDocType(docType);
+      setDocActionError("");
+
+      const res = await fetch(`/api/admin/guide-applications/${currentApp._id}/documents`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentType: docType,
+          action,
+          adminNote: note,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setDocActionError(data.error || "Failed to update document verification status.");
+        return;
+      }
+
+      // Update current application state in modal locally so modal stays open with updated doc status
+      if (data.data) {
+        setCurrentApp(data.data);
+      }
+    } catch (err) {
+      console.error("Error verifying document:", err);
+      setDocActionError("Network error while updating document status.");
+    } finally {
+      setUpdatingDocType(null);
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -50,7 +91,7 @@ export default function GuideApplicationDetailModal({
       setSubmitting(true);
       setError("");
 
-      const res = await fetch(`/api/admin/guide-applications/${application._id}`, {
+      const res = await fetch(`/api/admin/guide-applications/${currentApp._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "APPROVE", adminNote }),
@@ -63,7 +104,9 @@ export default function GuideApplicationDetailModal({
         return;
       }
 
-      onActionComplete();
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (err) {
       console.error("Approve application error:", err);
       setError("Network error occurred while approving application.");
@@ -77,7 +120,7 @@ export default function GuideApplicationDetailModal({
       setSubmitting(true);
       setError("");
 
-      const res = await fetch(`/api/admin/guide-applications/${application._id}`, {
+      const res = await fetch(`/api/admin/guide-applications/${currentApp._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -93,7 +136,9 @@ export default function GuideApplicationDetailModal({
         return;
       }
 
-      onActionComplete();
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (err) {
       console.error("Reject application error:", err);
       setError("Network error occurred while rejecting application.");
@@ -116,12 +161,12 @@ export default function GuideApplicationDetailModal({
                 Guide Application Review
               </h2>
               <p className="text-xs text-mutedText">
-                Submitted on {new Date(application.createdAt).toLocaleDateString()}
+                Submitted on {new Date(currentApp.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {getStatusBadge(application.status)}
+            {getStatusBadge(currentApp.status)}
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
@@ -140,37 +185,162 @@ export default function GuideApplicationDetailModal({
             </div>
           )}
 
-          {/* Applicant Summary Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-2xl bg-secondaryBg border border-borderLine">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-200 shrink-0 border border-borderLine">
-              {application.profileImage ? (
-                <img
-                  src={application.profileImage}
-                  alt={application.fullName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <User size={28} />
-                </div>
-              )}
-            </div>
-            <div className="space-y-1 flex-1">
-              <h3 className="font-bold text-lg text-primaryText">{application.fullName}</h3>
-              <div className="flex flex-wrap items-center gap-4 text-xs text-bodyText">
-                <span className="flex items-center gap-1">
-                  <Mail size={14} className="text-coral-500" /> {application.email}
-                </span>
-                {application.phone && (
-                  <span className="flex items-center gap-1">
-                    <Phone size={14} className="text-coral-500" /> {application.phone}
-                  </span>
+          {/* Profile Photo Card */}
+          <div className="p-4 rounded-2xl bg-secondaryBg border border-borderLine flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-200 shrink-0 border border-borderLine shadow-sm">
+                {currentApp.profileImage ? (
+                  <img
+                    src={currentApp.profileImage}
+                    alt={currentApp.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <User size={28} />
+                  </div>
                 )}
-                <span className="flex items-center gap-1">
-                  <Globe size={14} className="text-coral-500" /> {application.country || "India"}
+              </div>
+              <div>
+                <span className="text-xs font-bold text-coral-600 uppercase tracking-wider block">
+                  Profile Photo
                 </span>
+                <p className="font-bold text-primaryText text-sm mt-0.5">{currentApp.fullName}</p>
+                <p className="text-xs text-mutedText truncate max-w-xs">
+                  {currentApp.profileImageMetadata?.fileName || "profile_photo.jpg"}
+                </p>
               </div>
             </div>
+            {currentApp.profileImage && (
+              <a
+                href={currentApp.profileImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-white border border-borderLine text-xs font-semibold text-primaryText hover:border-coral-500 hover:text-coral-600 transition-colors flex items-center gap-1.5"
+              >
+                <ExternalLink size={14} />
+                View Full Photo
+              </a>
+            )}
+          </div>
+
+          {/* Verification Documents Review Section */}
+          <div className="p-5 rounded-2xl bg-white border border-borderLine space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="font-bold text-sm text-primaryText flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-coral-500" />
+                  Verification Documents ({currentApp.verificationDocuments?.length || 0})
+                </h3>
+                <p className="text-xs text-mutedText mt-0.5">
+                  Review and verify submitted Government ID and certificates.
+                </p>
+              </div>
+            </div>
+
+            {docActionError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium">
+                {docActionError}
+              </div>
+            )}
+
+            {!currentApp.verificationDocuments || currentApp.verificationDocuments.length === 0 ? (
+              <div className="p-4 bg-gray-50 text-center rounded-xl text-xs text-mutedText">
+                No verification documents submitted with this application.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {currentApp.verificationDocuments.map((doc) => {
+                  const isGovId = doc.type === "GOVERNMENT_ID";
+                  const isVerified = doc.status === "VERIFIED";
+                  const isRejected = doc.status === "REJECTED";
+
+                  return (
+                    <div
+                      key={doc._id || doc.type}
+                      className="p-4 rounded-xl bg-secondaryBg border border-borderLine space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${isGovId ? "bg-coral-100 text-coral-600" : "bg-blue-100 text-blue-600"}`}>
+                            <FileText size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-primaryText">
+                                {doc.type.replace(/_/g, " ")}
+                              </span>
+                              {isGovId && (
+                                <Badge variant="coral" className="text-[10px] py-0 px-1.5 font-bold">
+                                  REQUIRED
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-mutedText truncate mt-0.5">
+                              {doc.fileName || "verification_document"} • Uploaded {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "recently"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isVerified && <Badge variant="success">VERIFIED</Badge>}
+                          {isRejected && <Badge variant="coral">REJECTED</Badge>}
+                          {!isVerified && !isRejected && <Badge variant="warning">PENDING</Badge>}
+
+                          {doc.secureUrl && (
+                            <a
+                              href={doc.secureUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-white border border-borderLine rounded-lg text-xs font-semibold text-primaryText hover:border-coral-500 hover:text-coral-600 transition-colors flex items-center gap-1"
+                            >
+                              <ExternalLink size={13} />
+                              Open
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Admin Verification Controls per document */}
+                      <div className="pt-2 border-t border-gray-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="text-mutedText">
+                          {doc.adminNote && (
+                            <span className="text-red-600 font-medium">Note: {doc.adminNote}</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyDocument(doc.type, "VERIFY")}
+                            disabled={updatingDocType === doc.type || isVerified}
+                            className="px-3 py-1.5 rounded-lg font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                            <CheckCircle2 size={13} />
+                            {isVerified ? "Verified" : "Verify Document"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const note = prompt("Enter rejection note for this document:", doc.adminNote || "");
+                              if (note !== null) {
+                                handleVerifyDocument(doc.type, "REJECT", note);
+                              }
+                            }}
+                            disabled={updatingDocType === doc.type}
+                            className="px-3 py-1.5 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                            <XCircle size={13} />
+                            {isRejected ? "Rejected" : "Reject Document"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Detail Grid */}
@@ -182,9 +352,9 @@ export default function GuideApplicationDetailModal({
                 <MapPin size={14} className="text-coral-500" /> Target Destination
               </span>
               <p className="font-bold text-primaryText text-base">
-                {application.destination?.name || "Selected Destination"}
+                {currentApp.destination?.name || "Selected Destination"}
               </p>
-              <p className="text-xs text-mutedText">{application.destination?.country}</p>
+              <p className="text-xs text-mutedText">{currentApp.destination?.country}</p>
             </div>
 
             {/* Rates & Experience */}
@@ -193,10 +363,10 @@ export default function GuideApplicationDetailModal({
                 <DollarSign size={14} className="text-coral-500" /> Hourly Rate & Experience
               </span>
               <p className="font-bold text-primaryText text-base">
-                {application.currency} {application.hourlyRate} / hr
+                {currentApp.currency} {currentApp.hourlyRate} / hr
               </p>
               <p className="text-xs text-mutedText">
-                {application.experienceYears} Years Experience
+                {currentApp.experienceYears} Years Experience
               </p>
             </div>
 
@@ -206,9 +376,9 @@ export default function GuideApplicationDetailModal({
                 Languages Spoken
               </span>
               <p className="text-sm font-semibold text-primaryText">
-                {Array.isArray(application.languages)
-                  ? application.languages.join(", ")
-                  : application.languages}
+                {Array.isArray(currentApp.languages)
+                  ? currentApp.languages.join(", ")
+                  : currentApp.languages}
               </p>
             </div>
 
@@ -218,8 +388,8 @@ export default function GuideApplicationDetailModal({
                 Specialties
               </span>
               <p className="text-sm font-semibold text-primaryText">
-                {Array.isArray(application.specialties) && application.specialties.length > 0
-                  ? application.specialties.join(", ")
+                {Array.isArray(currentApp.specialties) && currentApp.specialties.length > 0
+                  ? currentApp.specialties.join(", ")
                   : "General Guiding"}
               </p>
             </div>
@@ -227,12 +397,12 @@ export default function GuideApplicationDetailModal({
           </div>
 
           {/* Availability */}
-          {application.availability && (
+          {currentApp.availability && (
             <div className="p-4 rounded-2xl bg-white border border-borderLine space-y-1">
               <span className="text-xs font-semibold text-mutedText uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar size={14} className="text-coral-500" /> Availability
               </span>
-              <p className="text-sm font-medium text-primaryText">{application.availability}</p>
+              <p className="text-sm font-medium text-primaryText">{currentApp.availability}</p>
             </div>
           )}
 
@@ -242,7 +412,7 @@ export default function GuideApplicationDetailModal({
               <FileText size={14} className="text-coral-500" /> Short Bio
             </span>
             <p className="text-sm text-bodyText leading-relaxed whitespace-pre-line">
-              {application.bio}
+              {currentApp.bio}
             </p>
           </div>
 
@@ -252,24 +422,24 @@ export default function GuideApplicationDetailModal({
               <Award size={14} className="text-coral-500" /> Application Motivation
             </span>
             <p className="text-sm text-bodyText leading-relaxed whitespace-pre-line">
-              {application.motivation}
+              {currentApp.motivation}
             </p>
           </div>
 
           {/* Admin Note if already reviewed */}
-          {application.status !== "PENDING" && (
+          {currentApp.status !== "PENDING" && (
             <div className="p-4 rounded-2xl bg-secondaryBg border border-borderLine space-y-2">
               <div className="flex justify-between items-center text-xs text-mutedText">
                 <span>
-                  Reviewed by: <span className="font-semibold text-primaryText">{application.reviewedBy?.name || "Admin"}</span>
+                  Reviewed by: <span className="font-semibold text-primaryText">{currentApp.reviewedBy?.name || "Admin"}</span>
                 </span>
-                {application.reviewedAt && (
-                  <span>Reviewed on: {new Date(application.reviewedAt).toLocaleDateString()}</span>
+                {currentApp.reviewedAt && (
+                  <span>Reviewed on: {new Date(currentApp.reviewedAt).toLocaleDateString()}</span>
                 )}
               </div>
-              {application.adminNote && (
+              {currentApp.adminNote && (
                 <p className="text-xs text-bodyText">
-                  <span className="font-semibold">Note:</span> {application.adminNote}
+                  <span className="font-semibold">Note:</span> {currentApp.adminNote}
                 </p>
               )}
             </div>
@@ -320,7 +490,7 @@ export default function GuideApplicationDetailModal({
             Close
           </Button>
 
-          {application.status === "PENDING" && !rejecting && (
+          {currentApp.status === "PENDING" && !rejecting && (
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button
                 type="button"

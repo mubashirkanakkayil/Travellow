@@ -20,7 +20,7 @@ export async function GET(request) {
       if (destinationFilter.match(/^[0-9a-fA-F]{24}$/)) {
         query.destination = destinationFilter;
       } else {
-        const destDoc = await Destination.findOne({ slug: destinationFilter });
+        const destDoc = await Destination.findOne({ slug: destinationFilter }).lean();
         if (destDoc) {
           query.destination = destDoc._id;
         }
@@ -38,7 +38,8 @@ export async function GET(request) {
 
     const guides = await Guide.find(query)
       .populate("destination", "name country slug region")
-      .sort({ rating: -1 });
+      .sort({ rating: -1 })
+      .lean();
 
     return NextResponse.json({
       success: true,

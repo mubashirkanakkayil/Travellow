@@ -42,6 +42,8 @@ export async function POST(request) {
       country,
       destination,
       profileImage,
+      profileImageMetadata,
+      verificationDocuments,
       languages,
       specialties,
       experienceYears,
@@ -77,6 +79,49 @@ export async function POST(request) {
     if (!motivation || !motivation.trim()) {
       return NextResponse.json(
         { success: false, error: "Application motivation statement is required." },
+        { status: 400 }
+      );
+    }
+
+    // Server-side Profile Photo Validation
+    const profilePhotoUrl =
+      typeof profileImage === "string"
+        ? profileImage
+        : profileImage?.secureUrl || profileImageMetadata?.secureUrl;
+
+    if (!profilePhotoUrl || !profilePhotoUrl.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Profile photo is required." },
+        { status: 400 }
+      );
+    }
+
+    // Process & Validate Verification Documents
+    const formattedDocs = Array.isArray(verificationDocuments)
+      ? verificationDocuments
+          .filter((doc) => doc && doc.type && doc.secureUrl)
+          .map((doc) => ({
+            type: doc.type,
+            fileName: doc.fileName || doc.filename || "document",
+            publicId: doc.publicId || "",
+            secureUrl: doc.secureUrl,
+            resourceType: doc.resourceType || "image",
+            fileSize: Number(doc.fileSize || 0),
+            status: "PENDING",
+            uploadedAt: new Date(),
+          }))
+      : [];
+
+    const hasGovId = formattedDocs.some(
+      (doc) => doc.type === "GOVERNMENT_ID" && doc.secureUrl
+    );
+
+    if (!hasGovId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Government ID document is required for identity verification.",
+        },
         { status: 400 }
       );
     }
@@ -141,6 +186,11 @@ export async function POST(request) {
       ? currency
       : "INR";
 
+    const profileMeta =
+      typeof profileImage === "object"
+        ? profileImage
+        : profileImageMetadata || { secureUrl: profilePhotoUrl };
+
     // Create application with server-enforced PENDING status
     const newApp = await GuideApplication.create({
       user: user.id,
@@ -149,7 +199,14 @@ export async function POST(request) {
       phone: (phone || user.phone || "").trim(),
       country: (country || user.country || destDoc.country || "India").trim(),
       destination: destDoc._id,
-      profileImage: (profileImage || user.profileImage || "").trim(),
+      profileImage: profilePhotoUrl.trim(),
+      profileImageMetadata: {
+        publicId: profileMeta.publicId || "",
+        secureUrl: profilePhotoUrl.trim(),
+        fileName: profileMeta.fileName || "",
+        resourceType: profileMeta.resourceType || "image",
+      },
+      verificationDocuments: formattedDocs,
       languages: parsedLanguages.length > 0 ? parsedLanguages : ["English"],
       specialties: parsedSpecialties,
       experienceYears: parsedExp,

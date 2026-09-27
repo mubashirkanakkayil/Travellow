@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
         { slug: querySlug },
         ...(isObjectId ? [{ _id: slug }] : []),
       ],
-    });
+    }).lean();
 
     if (!destination) {
       return NextResponse.json(

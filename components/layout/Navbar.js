@@ -31,7 +31,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch current user authentication status on mount
+  // Fetch current user authentication status on mount, route change, and on auth events
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -50,14 +50,22 @@ export default function Navbar() {
       }
     }
     checkAuth();
-  }, []);
+
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setAuthUser(null);
-      router.push("/sign-in");
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth-change"));
+      }
+      window.location.href = "/sign-in";
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -165,7 +173,7 @@ export default function Navbar() {
                 <Link href="/sign-up">
                   <Button variant="primary" size="sm">
                     <User size={16} />
-                    Sign Up
+                    Registration
                   </Button>
                 </Link>
               </>
@@ -238,7 +246,7 @@ export default function Navbar() {
                 </Link>
                 <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" size="md" className="w-full justify-center">
-                    Sign Up
+                    Registration
                   </Button>
                 </Link>
               </>

@@ -50,6 +50,17 @@ export default function DestinationMap({
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const [selectedDest, setSelectedDest] = useState(null);
+  const [mapError, setMapError] = useState(false);
+
+  // Catch Google Maps authentication failures (invalid/unbilled API keys)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.gm_authFailure = () => {
+        console.warn("Google Maps API Key Authentication Failed. Falling back to map preview card.");
+        setMapError(true);
+      };
+    }
+  }, []);
 
   // Filter valid destinations with coordinates
   const validDestinations = (destinations || []).filter((dest) => {
@@ -74,8 +85,8 @@ export default function DestinationMap({
   const defaultCenter = { lat: 20.5937, lng: 78.9629 };
   const defaultZoom = 4;
 
-  // Fallback UI when Google Maps API key is missing or placeholder
-  if (!apiKey || apiKey.trim() === "") {
+  // Fallback UI when Google Maps API key is missing or authentication failed
+  if (!apiKey || apiKey.trim() === "" || mapError) {
     return (
       <div className={`${className} bg-slate-900 text-white flex flex-col justify-center items-center p-6 text-center relative overflow-hidden group`}>
         <div className="absolute inset-0 bg-gradient-to-br from-coral-500/10 via-teal-500/10 to-transparent pointer-events-none" />
@@ -83,10 +94,10 @@ export default function DestinationMap({
           <MapPin size={28} />
         </div>
         <h3 className="text-xl font-bold tracking-tight mb-2 text-white">
-          Google Maps View Ready
+          Destination Map Preview
         </h3>
         <p className="text-slate-300 text-sm max-w-md mb-6 leading-relaxed">
-          Interactive map layout is fully integrated. To display live Google Map tiles, please set your <code className="bg-slate-800 px-2 py-1 rounded text-teal-400 font-mono text-xs border border-slate-700">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in <code className="bg-slate-800 px-2 py-1 rounded text-teal-400 font-mono text-xs border border-slate-700">.env.local</code>.
+          Interactive map is temporarily unavailable. You can still explore all mapped destinations and their coordinates.
         </p>
 
         <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-xl p-4 w-full max-w-md text-left text-xs space-y-2 mb-6">
@@ -107,8 +118,8 @@ export default function DestinationMap({
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/40 px-3 py-1.5 rounded-full border border-slate-700/50">
-          <AlertCircle size={14} className="text-amber-400" />
-          <span>Graceful preview fallback — application operating normally.</span>
+          <Compass size={14} className="text-coral-400" />
+          <span>Map preview available</span>
         </div>
       </div>
     );

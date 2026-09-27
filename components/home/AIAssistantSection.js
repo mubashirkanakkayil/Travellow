@@ -110,7 +110,7 @@ export default function AIAssistantSection() {
     }
   }, [messages, loading]);
 
-  // Initial Auth Check on Mount
+  // Initial Auth Check on Mount & on auth-change
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -129,6 +129,12 @@ export default function AIAssistantSection() {
       }
     }
     checkAuth();
+
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
   const handleSendMessage = async (customText = null) => {
@@ -141,8 +147,28 @@ export default function AIAssistantSection() {
 
     setError("");
 
-    // 1. Verify Auth status
-    if (authStatus === "unauthenticated") {
+    // 1. Verify Auth status via live check
+    let isAuthenticated = authStatus === "authenticated";
+    if (!isAuthenticated) {
+      try {
+        const authRes = await fetch("/api/auth/me");
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          if (authData.authenticated && authData.user) {
+            isAuthenticated = true;
+            setAuthStatus("authenticated");
+          } else {
+            setAuthStatus("unauthenticated");
+          }
+        } else {
+          setAuthStatus("unauthenticated");
+        }
+      } catch (err) {
+        setAuthStatus("unauthenticated");
+      }
+    }
+
+    if (!isAuthenticated) {
       setShowAuthModal(true);
       return;
     }

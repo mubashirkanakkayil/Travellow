@@ -351,11 +351,12 @@ async function seed() {
     // 1. Create Demo Users
     console.log("Seeding demo users...");
     const hashedPassword = await bcrypt.hash("password123", 10);
+    const adminHashedPassword = await bcrypt.hash("admin@123", 10);
 
     const adminUser = await User.create({
       name: "Travellow Admin",
-      email: "admin@travellow.ai",
-      password: hashedPassword,
+      email: "admin@gmail.com",
+      password: adminHashedPassword,
       phone: "+91 9876543210",
       role: "ADMIN",
       country: "India",

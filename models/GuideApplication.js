@@ -37,6 +37,41 @@ const GuideApplicationSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    profileImageMetadata: {
+      publicId: { type: String, default: "" },
+      secureUrl: { type: String, default: "" },
+      fileName: { type: String, default: "" },
+      resourceType: { type: String, default: "image" },
+    },
+    verificationDocuments: [
+      {
+        type: {
+          type: String,
+          enum: [
+            "GOVERNMENT_ID",
+            "EXPERIENCE_CERTIFICATE",
+            "TOURISM_CERTIFICATE",
+            "GUIDE_LICENSE",
+            "LANGUAGE_CERTIFICATE",
+            "OTHER",
+          ],
+          required: true,
+        },
+        fileName: { type: String, default: "" },
+        publicId: { type: String, required: true },
+        secureUrl: { type: String, required: true },
+        resourceType: { type: String, default: "image" },
+        fileSize: { type: Number, default: 0 },
+        status: {
+          type: String,
+          enum: ["PENDING", "VERIFIED", "REJECTED"],
+          default: "PENDING",
+        },
+        adminNote: { type: String, default: "" },
+        uploadedAt: { type: Date, default: Date.now },
+        reviewedAt: { type: Date },
+      },
+    ],
     languages: {
       type: [String],
       default: ["English"],

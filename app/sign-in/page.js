@@ -43,6 +43,9 @@ export default function SignInPage() {
       const data = await res.json();
 
       if (data.success) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth-change"));
+        }
         // Redirect ADMIN role directly to /admin, otherwise /dashboard
         if (data.user?.role === "ADMIN") {
           router.push("/admin");
@@ -97,7 +100,7 @@ export default function SignInPage() {
             label="Email Address"
             type="email"
             icon={Mail}
-            placeholder="anney@example.com"
+            placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -134,19 +137,6 @@ export default function SignInPage() {
           </Button>
         </form>
 
-        {/* Demo Credentials Helper Box */}
-        <div className="p-4 rounded-2xl bg-secondaryBg border border-borderLine text-xs space-y-1.5 text-bodyText">
-          <span className="font-semibold text-primaryText block">
-            Academic Demo Credentials:
-          </span>
-          <p>
-            User: <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">anney@example.com</code> / <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">password123</code>
-          </p>
-          <p>
-            Admin: <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">admin@travellow.ai</code> / <code className="bg-white px-1.5 py-0.5 rounded border border-borderLine">password123</code>
-          </p>
-        </div>
-
         {/* Footer Link */}
         <div className="text-center pt-2 border-t border-borderLine">
           <p className="text-sm text-bodyText">
@@ -155,7 +145,7 @@ export default function SignInPage() {
               href="/sign-up"
               className="font-semibold text-coral-500 hover:text-coral-600 transition-colors"
             >
-              Create Account
+              Registration
             </Link>
           </p>
         </div>

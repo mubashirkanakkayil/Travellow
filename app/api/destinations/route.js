@@ -34,7 +34,7 @@ export async function GET(request) {
       ];
     }
 
-    const destinations = await Destination.find(query).sort({ rating: -1 });
+    const destinations = await Destination.find(query).sort({ rating: -1 }).lean();
 
     return NextResponse.json({
       success: true,

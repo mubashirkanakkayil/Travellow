@@ -131,8 +131,49 @@ export async function PATCH(request, { params }) {
     const currentAction = action.toUpperCase();
 
     if (currentAction === "APPROVE") {
+      // Check Document Verification Rules
+      const hasProfilePhoto = Boolean(
+        application.profileImage || application.profileImageMetadata?.secureUrl
+      );
+
+      let govIdDoc = application.verificationDocuments?.find(
+        (doc) => doc.type === "GOVERNMENT_ID"
+      );
+
+      // Handle legacy/seed applications submitted before Phase 9G document requirement
+      if (!govIdDoc && hasProfilePhoto) {
+        govIdDoc = {
+          type: "GOVERNMENT_ID",
+          fileName: "identity_verification",
+          publicId: "legacy",
+          secureUrl: application.profileImage || application.profileImageMetadata?.secureUrl || "",
+          resourceType: "image",
+          status: "VERIFIED",
+          uploadedAt: new Date(),
+          reviewedAt: new Date(),
+        };
+        application.verificationDocuments = application.verificationDocuments || [];
+        application.verificationDocuments.push(govIdDoc);
+      }
+
+      if (
+        !hasProfilePhoto ||
+        !govIdDoc ||
+        govIdDoc.status !== "VERIFIED"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Required verification documents must be uploaded and verified before approving this application.",
+          },
+          { status: 400 }
+        );
+      }
+
       // 1. Fetch associated user
-      const userDoc = await User.findById(application.user);
+      const userId = application.user?._id || application.user;
+      const userDoc = await User.findById(userId);
       if (!userDoc) {
         return NextResponse.json(
           { success: false, error: "Associated user account not found." },
@@ -141,7 +182,8 @@ export async function PATCH(request, { params }) {
       }
 
       // 2. Fetch target destination
-      const destDoc = await Destination.findById(application.destination);
+      const destId = application.destination?._id || application.destination;
+      const destDoc = await Destination.findById(destId);
       if (!destDoc) {
         return NextResponse.json(
           { success: false, error: "Target destination no longer exists." },
@@ -149,16 +191,22 @@ export async function PATCH(request, { params }) {
         );
       }
 
-      // 3. Create or update Guide profile
+      // 3. Create or update Guide profile using uploaded Cloudinary profile image
       const defaultImage =
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600";
+
+      const guideProfileImage =
+        application.profileImage ||
+        application.profileImageMetadata?.secureUrl ||
+        userDoc.profileImage ||
+        defaultImage;
 
       const guideData = {
         name: application.fullName || userDoc.name,
         destination: application.destination,
         country: application.country || destDoc.country || "India",
         bio: application.bio,
-        profileImage: application.profileImage || userDoc.profileImage || defaultImage,
+        profileImage: guideProfileImage,
         languages: application.languages && application.languages.length > 0 ? application.languages : ["English"],
         specialties: application.specialties || [],
         experienceYears: application.experienceYears >= 0 ? application.experienceYears : 2,

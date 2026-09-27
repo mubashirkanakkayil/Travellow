@@ -138,8 +138,15 @@ export default function GuideStatusCard({ userRole }) {
 
   // 2. PENDING State
   if (application && application.status === "PENDING") {
+    const hasProfilePhoto = Boolean(application.profileImage || application.profileImageMetadata?.secureUrl);
+    const govIdDoc = application.verificationDocuments?.find((d) => d.type === "GOVERNMENT_ID");
+    const otherDocs = application.verificationDocuments?.filter((d) => d.type !== "GOVERNMENT_ID") || [];
+
+    const isGovIdVerified = govIdDoc?.status === "VERIFIED";
+    const isGovIdRejected = govIdDoc?.status === "REJECTED";
+
     return (
-      <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
+      <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
@@ -153,10 +160,10 @@ export default function GuideStatusCard({ userRole }) {
                 <Badge variant="warning">PENDING ADMIN APPROVAL</Badge>
               </div>
               <p className="text-bodyText text-xs sm:text-sm leading-relaxed max-w-2xl">
-                Your Local Guide registration has been submitted successfully. Per platform rules, new guide applications require Administrator review before your role switches to <strong>LOCAL_GUIDE</strong>.
+                Your registration and verification documents have been submitted. Our administrators are reviewing your documents before updating your role to <strong>LOCAL_GUIDE</strong>.
               </p>
               {application.destination && (
-                <div className="mt-2 text-xs text-amber-800 bg-amber-100/60 p-2.5 rounded-xl inline-block border border-amber-200/60">
+                <div className="mt-1 text-xs text-amber-800 bg-amber-100/60 p-2.5 rounded-xl inline-block border border-amber-200/60">
                   Target Destination: <strong>{application.destination.name}</strong> • Submitted: {new Date(application.createdAt).toLocaleDateString()}
                 </div>
               )}
@@ -165,6 +172,44 @@ export default function GuideStatusCard({ userRole }) {
           <Button variant="outline" size="sm" disabled className="shrink-0 opacity-70 bg-white">
             Waiting for Admin Review
           </Button>
+        </div>
+
+        {/* Verification Document Progress Breakdown */}
+        <div className="pt-3 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-white rounded-xl border border-amber-200/80 flex items-center justify-between">
+            <span className="font-medium text-bodyText">Profile Photo</span>
+            {hasProfilePhoto ? (
+              <span className="text-emerald-700 font-bold flex items-center gap-1">
+                <CheckCircle2 size={13} /> Uploaded
+              </span>
+            ) : (
+              <span className="text-red-600 font-bold">Missing</span>
+            )}
+          </div>
+
+          <div className="p-3 bg-white rounded-xl border border-amber-200/80 flex items-center justify-between">
+            <span className="font-medium text-bodyText">Government ID</span>
+            {isGovIdVerified ? (
+              <span className="text-emerald-700 font-bold flex items-center gap-1">
+                <CheckCircle2 size={13} /> Verified
+              </span>
+            ) : isGovIdRejected ? (
+              <span className="text-red-600 font-bold flex items-center gap-1">
+                <XCircle size={13} /> Rejected
+              </span>
+            ) : (
+              <span className="text-amber-700 font-bold flex items-center gap-1">
+                <Clock size={13} /> Pending Review
+              </span>
+            )}
+          </div>
+
+          <div className="p-3 bg-white rounded-xl border border-amber-200/80 flex items-center justify-between">
+            <span className="font-medium text-bodyText">Supporting Certificates</span>
+            <span className="text-primaryText font-bold">
+              {otherDocs.length > 0 ? `${otherDocs.length} Attached` : "None Attached"}
+            </span>
+          </div>
         </div>
       </div>
     );

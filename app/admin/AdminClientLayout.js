@@ -60,8 +60,10 @@ export default function AdminClientLayout({ user, children }) {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/sign-in");
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth-change"));
+      }
+      window.location.href = "/sign-in";
     } catch (err) {
       console.error("Logout error:", err);
     }
