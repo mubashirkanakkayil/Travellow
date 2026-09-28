@@ -169,6 +169,18 @@ export async function POST(request) {
         );
       }
 
+      // Server-side Self-Booking Protection
+      if (guide.user && guide.user.toString() === user.id) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "You cannot book yourself as a local guide.",
+            error: "You cannot book yourself as a local guide.",
+          },
+          { status: 400 }
+        );
+      }
+
       // Calculate totalAmount using MongoDB guide hourlyRate
       const hourlyRate = guide.hourlyRate;
       const currency = guide.currency || "INR";

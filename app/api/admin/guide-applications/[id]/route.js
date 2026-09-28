@@ -203,6 +203,7 @@ export async function PATCH(request, { params }) {
 
       const guideData = {
         name: application.fullName || userDoc.name,
+        user: userDoc._id,
         destination: application.destination,
         country: application.country || destDoc.country || "India",
         bio: application.bio,
@@ -215,10 +216,12 @@ export async function PATCH(request, { params }) {
         verified: true,
       };
 
-      // Search for existing guide by name and destination to avoid duplicate creation
+      // Search for existing guide by user ID or name + destination to avoid duplicate creation
       let guideDoc = await Guide.findOne({
-        name: guideData.name,
-        destination: guideData.destination,
+        $or: [
+          { user: userDoc._id },
+          { name: guideData.name, destination: guideData.destination },
+        ],
       });
 
       if (guideDoc) {

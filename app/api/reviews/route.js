@@ -166,6 +166,14 @@ export async function POST(request) {
       );
     }
 
+    // Prevent guides from reviewing their own guide profile
+    if (targetField === "guide" && targetDoc.user && targetDoc.user.toString() === currentUser.id) {
+      return NextResponse.json(
+        { success: false, error: "You cannot review your own local guide profile." },
+        { status: 400 }
+      );
+    }
+
     // 5. Validate Rating (must be strict integer between 1 and 5)
     if (
       rating === null ||

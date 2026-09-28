@@ -7,6 +7,11 @@ const GuideSchema = new mongoose.Schema(
       required: [true, "Guide name is required"],
       trim: true,
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     destination: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Destination",

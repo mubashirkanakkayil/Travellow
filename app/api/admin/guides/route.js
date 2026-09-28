@@ -241,7 +241,7 @@ export async function POST(request) {
       : [];
 
     // Construct Guide Document (force rating = 0 and reviewCount = 0 for new guide)
-    const newGuide = await Guide.create({
+    const guidePayload = {
       name: name.trim(),
       destination,
       country: country.trim(),
@@ -255,7 +255,13 @@ export async function POST(request) {
       experienceYears: parsedExp,
       rating: 0,
       reviewCount: 0,
-    });
+    };
+
+    if (body.userId && mongoose.Types.ObjectId.isValid(body.userId)) {
+      guidePayload.user = body.userId;
+    }
+
+    const newGuide = await Guide.create(guidePayload);
 
     const populatedGuide = await Guide.findById(newGuide._id).populate(
       "destination",

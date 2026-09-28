@@ -76,10 +76,20 @@ export async function POST(req) {
       });
     }
 
-    // 5. Query Database Grounding Context
-    const destinations = await Destination.find().lean();
-    const hotels = await Hotel.find().populate("destination", "name").lean();
-    const guides = await Guide.find().populate("destination", "name").lean();
+    // 5. Query Database Grounding Context (in parallel with field projections for maximum performance)
+    const [destinations, hotels, guides] = await Promise.all([
+      Destination.find()
+        .select("name country region description bestTimeToVisit activities highlights startingPrice currency")
+        .lean(),
+      Hotel.find()
+        .select("name rating pricePerNight currency amenities description destination")
+        .populate("destination", "name")
+        .lean(),
+      Guide.find({ user: { $ne: userId } })
+        .select("name rating hourlyRate currency languages specialties experienceYears destination")
+        .populate("destination", "name")
+        .lean(),
+    ]);
 
     // 6. Build History & Call Gemini AI
     const existingMessages = chatDoc.messages || [];

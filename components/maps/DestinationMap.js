@@ -47,20 +47,27 @@ export default function DestinationMap({
   selectedDestinationId = null,
   onSelectDestination = () => {},
   className = "h-[500px] w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100",
+  mapId = undefined,
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const [selectedDest, setSelectedDest] = useState(null);
   const [mapError, setMapError] = useState(false);
 
-  // Catch Google Maps authentication failures (invalid/unbilled API keys)
+  // Catch Google Maps authentication failures (invalid/unbilled API keys, domain restrictions)
   useEffect(() => {
     if (typeof window !== "undefined") {
+      if (!apiKey || apiKey.trim() === "") {
+        console.warn("[DestinationMap] NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing or empty at build/runtime. Fallback preview displayed.");
+      } else {
+        console.log("[DestinationMap] Google Maps Key is present (length:", apiKey.length, ")");
+      }
+
       window.gm_authFailure = () => {
-        console.warn("Google Maps API Key Authentication Failed. Falling back to map preview card.");
+        console.warn("[DestinationMap] Google Maps API Key Authentication Failed (gm_authFailure). Verify Google Cloud HTTP referrer restrictions, billing, and Maps JS API enablement.");
         setMapError(true);
       };
     }
-  }, []);
+  }, [apiKey]);
 
   // Filter valid destinations with coordinates
   const validDestinations = (destinations || []).filter((dest) => {
@@ -134,7 +141,7 @@ export default function DestinationMap({
           gestureHandling="greedy"
           disableDefaultUI={false}
           className="w-full h-full rounded-2xl"
-          mapId="travellow-destinations-map"
+          mapId={mapId}
         >
           {/* Fit map bounds dynamically to markers */}
           <MapBoundsFitter destinations={validDestinations} />

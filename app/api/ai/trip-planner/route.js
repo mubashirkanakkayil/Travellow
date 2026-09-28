@@ -92,41 +92,52 @@ export async function POST(req) {
       );
     }
 
-    // Fetch related hotels and guides for grounding
-    const hotels = await Hotel.find({ destination: foundDestination._id }).lean();
-    const guides = await Guide.find({ destination: foundDestination._id }).lean();
-
-    // Fetch live weather data safely from OpenWeather if coordinates exist
-    let weatherData = null;
+    // Fetch related hotels, guides, and live weather in parallel for performance
     const lat = Number(foundDestination.latitude);
     const lon = Number(foundDestination.longitude);
+    const openWeatherKey = process.env.OPENWEATHER_API_KEY?.trim();
+    const canFetchWeather =
+      !isNaN(lat) &&
+      !isNaN(lon) &&
+      (lat !== 0 || lon !== 0) &&
+      openWeatherKey &&
+      openWeatherKey !== "your_openweather_api_key_here";
 
-    if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0) && process.env.OPENWEATHER_API_KEY) {
-      try {
-        const apiKey = process.env.OPENWEATHER_API_KEY.trim();
-        if (apiKey && apiKey !== "your_openweather_api_key_here") {
-          const openWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${encodeURIComponent(apiKey)}&units=metric`;
-          const wRes = await fetch(openWeatherUrl, {
+    const fetchWeatherPromise = canFetchWeather
+      ? fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${encodeURIComponent(openWeatherKey)}&units=metric`,
+          {
             headers: { Accept: "application/json" },
             next: { revalidate: 600 },
-          });
-
-          if (wRes.ok) {
-            const wJson = await wRes.json();
-            weatherData = {
-              temperature: Math.round(wJson.main?.temp ?? 0),
-              feelsLike: Math.round(wJson.main?.feels_like ?? wJson.main?.temp ?? 0),
-              humidity: wJson.main?.humidity ?? 0,
-              windSpeed: Number((wJson.wind?.speed ?? 0).toFixed(1)),
-              condition: wJson.weather?.[0]?.main || "Clear",
-              description: wJson.weather?.[0]?.description || "clear sky",
-            };
+            signal: AbortSignal.timeout(3000),
           }
-        }
-      } catch (wErr) {
-        console.warn("Non-fatal error fetching weather for AI trip planner:", wErr.message);
-      }
-    }
+        )
+          .then(async (wRes) => {
+            if (wRes.ok) {
+              const wJson = await wRes.json();
+              return {
+                temperature: Math.round(wJson.main?.temp ?? 0),
+                feelsLike: Math.round(wJson.main?.feels_like ?? wJson.main?.temp ?? 0),
+                humidity: wJson.main?.humidity ?? 0,
+                windSpeed: Number((wJson.wind?.speed ?? 0).toFixed(1)),
+                condition: wJson.weather?.[0]?.main || "Clear",
+                description: wJson.weather?.[0]?.description || "clear sky",
+              };
+            }
+            return null;
+          })
+          .catch((wErr) => {
+            console.warn("Non-fatal error fetching weather for AI trip planner:", wErr.message);
+            return null;
+          })
+      : Promise.resolve(null);
+
+    const userId = user._id || user.id;
+    const [hotels, guides, weatherData] = await Promise.all([
+      Hotel.find({ destination: foundDestination._id }).lean(),
+      Guide.find({ destination: foundDestination._id, user: { $ne: userId } }).lean(),
+      fetchWeatherPromise,
+    ]);
 
     // 5. Generate Plan via Gemini AI
     const aiOutput = await generateAIPlan(
