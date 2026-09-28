@@ -187,13 +187,7 @@ export default function DestinationMap({
                   {selectedDest.country}
                 </p>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">From</span>
-                    <span className="text-sm font-extrabold text-teal-700">
-                      ₹{selectedDest.startingPrice?.toLocaleString() || "N/A"}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-end pt-2 border-t border-slate-100 mt-2">
                   <Link
                     href={`/destinations/${selectedDest.slug || selectedDest._id}`}
                     className="inline-flex items-center gap-1 bg-coral-500 hover:bg-coral-600 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors shadow-sm"

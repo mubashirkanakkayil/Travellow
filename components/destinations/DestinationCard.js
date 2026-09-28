@@ -74,13 +74,7 @@ export default function DestinationCard({ destination }) {
         </div>
 
         {/* Card Footer */}
-        <div className="pt-3 border-t border-borderLine flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase text-mutedText tracking-wider font-semibold">Starting from</span>
-            <span className="font-display font-bold text-lg text-primaryText">
-              ₹{startingPrice.toLocaleString("en-IN")} <span className="text-xs font-normal text-mutedText">/ person</span>
-            </span>
-          </div>
+        <div className="pt-3 border-t border-borderLine flex items-center justify-end">
           <Link href={`/destinations/${destination.slug || _id || id}`}>
             <Button variant="softCoral" size="sm">
               Explore
