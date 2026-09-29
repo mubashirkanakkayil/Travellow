@@ -76,6 +76,9 @@ export async function POST(req) {
       });
     }
 
+    const ownGuide = await Guide.findOne({ user: userId }).select("_id").lean();
+    const guideQuery = ownGuide ? { _id: { $ne: ownGuide._id } } : { user: { $ne: userId } };
+
     // 5. Query Database Grounding Context (in parallel with field projections for maximum performance)
     const [destinations, hotels, guides] = await Promise.all([
       Destination.find()
@@ -85,7 +88,7 @@ export async function POST(req) {
         .select("name rating pricePerNight currency amenities description destination")
         .populate("destination", "name")
         .lean(),
-      Guide.find({ user: { $ne: userId } })
+      Guide.find(guideQuery)
         .select("name rating hourlyRate currency languages specialties experienceYears destination")
         .populate("destination", "name")
         .lean(),

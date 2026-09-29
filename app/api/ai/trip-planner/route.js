@@ -133,9 +133,17 @@ export async function POST(req) {
       : Promise.resolve(null);
 
     const userId = user._id || user.id;
+    const ownGuide = await Guide.findOne({ user: userId }).select("_id").lean();
+    const guideQuery = { destination: foundDestination._id };
+    if (ownGuide) {
+      guideQuery._id = { $ne: ownGuide._id };
+    } else {
+      guideQuery.user = { $ne: userId };
+    }
+
     const [hotels, guides, weatherData] = await Promise.all([
       Hotel.find({ destination: foundDestination._id }).lean(),
-      Guide.find({ destination: foundDestination._id, user: { $ne: userId } }).lean(),
+      Guide.find(guideQuery).lean(),
       fetchWeatherPromise,
     ]);
 

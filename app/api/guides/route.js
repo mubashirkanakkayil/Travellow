@@ -19,7 +19,10 @@ export async function GET(request) {
 
     // Exclude currently authenticated user's own guide record from customer discovery
     if (currentUser) {
-      query.user = { $ne: currentUser.id };
+      const ownGuide = await Guide.findOne({ user: currentUser.id }).select("_id").lean();
+      if (ownGuide) {
+        query._id = { $ne: ownGuide._id };
+      }
     }
 
     // Filter by destination ID or slug
